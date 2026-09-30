@@ -39,6 +39,27 @@ def info(msg: str) -> None:
     print(f"[prepare_android] {msg}")
 
 
+def _app_tag_end(text: str) -> int:
+    """返回 <application …> 起始标签的 '>' 下标（-1 表示未找到）。"""
+    idx = text.find("<application")
+    if idx < 0:
+        return -1
+    return text.find(">", idx)
+
+
+def _insert_app_attr(text: str, attr: str) -> str:
+    """把属性插入到 <application …> 起始标签内（保持合法 XML）。
+
+    刻意不使用 re.sub 的反向引用：非 raw 替换串会把 `\\1` 变成字面反斜杠，
+    从而生成非法 XML（CI 上曾报 "Please ensure that the android manifest
+    is a valid XML document"）。
+    """
+    end = _app_tag_end(text)
+    if end < 0:
+        fail("AndroidManifest.xml 缺少 <application> 标签")
+    return text[:end] + "\n        " + attr + text[end:]
+
+
 def ensure_manifest() -> None:
     if not MANIFEST.exists():
         fail(f"未找到 {MANIFEST}；请先执行 flutter create --platforms=android .")
@@ -46,27 +67,26 @@ def ensure_manifest() -> None:
     text = MANIFEST.read_text(encoding="utf-8")
     original = text
 
-    # 1) 明文流量例外
+    # 1) 明文流量例外（局域网明文 HTTP 必需，开发文档 §8.3 / §17 坑 11）
     if "usesCleartextTraffic" not in text:
-        text = re.sub(
-            r"<application(\s)",
-            '<application\n        android:usesCleartextTraffic="true"\\1',
-            text,
-            count=1,
-        )
-        info("已加入 android:usesCleartextTraffic=\"true\"（局域网明文 HTTP 必需）")
+        text = _insert_app_attr(text, 'android:usesCleartextTraffic="true"')
+        info('已加入 android:usesCleartextTraffic="true"（局域网明文 HTTP 必需）')
     else:
         info("usesCleartextTraffic 已存在，跳过")
 
-    # 2) INTERNET 权限
+    # 2) INTERNET 权限（仅需网络权限，PRD §8.3）
     if "android.permission.INTERNET" not in text:
-        text = re.sub(
-            r"(<manifest[^>]*>)",
-            r"\1\n    <!-- 仅需网络权限（PRD §8.3） -->\n"
-            r"    <uses-permission android:name=\"android.permission.INTERNET\"/>",
-            text,
-            count=1,
+        idx = text.find("<manifest")
+        if idx < 0:
+            fail("AndroidManifest.xml 缺少 <manifest> 根标签")
+        end = text.find(">", idx)
+        if end < 0:
+            fail("AndroidManifest.xml 的 <manifest> 标签未闭合")
+        insert = (
+            "\n    <!-- 仅需网络权限（PRD §8.3） -->"
+            '\n    <uses-permission android:name="android.permission.INTERNET"/>'
         )
+        text = text[: end + 1] + insert + text[end + 1 :]
         info("已加入 INTERNET 权限")
     else:
         info("INTERNET 权限已存在，跳过")
@@ -75,12 +95,7 @@ def ensure_manifest() -> None:
     if 'android:label="' in text:
         text = re.sub(r'android:label="[^"]*"', f'android:label="{APP_LABEL}"', text)
     else:
-        text = re.sub(
-            r"<application(\s)",
-            f'<application\n        android:label="{APP_LABEL}"\\1',
-            text,
-            count=1,
-        )
+        text = _insert_app_attr(text, f'android:label="{APP_LABEL}"')
     info(f"已设置 App 名称：{APP_LABEL}")
 
     if text != original:
