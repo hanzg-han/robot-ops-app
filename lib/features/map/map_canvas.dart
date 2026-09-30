@@ -460,12 +460,12 @@ class GridMapPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(GridMapPainter old) =>
-      old.repaintTick != repaintTick ||
-      old.gridImage != gridImage ||
-      old.grid != grid ||
-      old.viewport.x0 != viewport.x0 ||
-      old.viewport.y0 != viewport.y0 ||
-      old.viewport.x1 != viewport.x1 ||
-      old.viewport.y1 != viewport.y1;
+  bool shouldRepaint(GridMapPainter oldDelegate) =>
+      oldDelegate.repaintTick != repaintTick ||
+      oldDelegate.gridImage != gridImage ||
+      oldDelegate.grid != grid ||
+      oldDelegate.viewport.x0 != viewport.x0 ||
+      oldDelegate.viewport.y0 != viewport.y0 ||
+      oldDelegate.viewport.x1 != viewport.x1 ||
+      oldDelegate.viewport.y1 != viewport.y1;
 }

@@ -54,7 +54,7 @@ flutter build apk --release
 
 | 依赖 | 版本 | 用途 |
 | --- | --- | --- |
-| `flutter_riverpod` | 见 pubspec | 声明于 pubspec（本工程实际用等价显式容器 + `ChangeNotifier`，见下） |
+| `flutter_riverpod` | ^2.6.1 | 已在 pubspec 声明（备用）；本工程实际使用等价显式容器 + `ChangeNotifier`（见下） |
 | `dio` | ^5.7.0 | HTTP 客户端（地址规范化、超时、日志钩子） |
 | `shared_preferences` | ^2.3.3 | 本地持久化（地址、超时、开关、巡逻草稿） |
 | `collection` | ^1.18.0 | 集合工具 |
@@ -85,7 +85,8 @@ git push -u origin main
 1. `flutter pub get`
 2. `flutter analyze --no-fatal-infos --no-fatal-warnings`（验收要求：无 error）
 3. `flutter test`（栅格解析 / 巡逻状态机 / 动作名解析 / 事件去重 / 安全红线）
-4. `flutter create --platforms=android --org com.wizrole .`（生成平台工程）
+4. `flutter create --platforms=android --org com.wizrole --project-name robot_ops_app .`（生成平台工程）
+   - `--project-name` 必须显式指定：仓库目录名 `robot-ops-app` 含连字符，不是合法 Dart 包名
 5. `python3 tool/prepare_android.py`（明文流量、权限、App 名）
 6. `flutter build apk --debug` 与 `flutter build apk --release`
 7. 上传 APK 与 Android 平台工程产物（Artifacts）
