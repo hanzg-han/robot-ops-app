@@ -66,6 +66,32 @@ jobs:
         # Dart 包名，而 Dart 包名只允许 [a-z0-9_]。
         run: flutter create --platforms=android --org com.wizrole --project-name robot_ops_app .
 
+      - name: Restore release signing keystore
+        # CI 每轮都是全新 HOME，AGP 现场生成的 ~/.android/debug.keystore 每轮都不同，
+        # 于是不同轮次产出的 APK 签名证书不一致 —— 后一轮无法覆盖安装前一轮。
+        # 这里从 Secrets 还原一把固定密钥，debug 与 release 都用它签名。
+        # Secrets 未配置时（例如外部 fork 的 PR）跳过并回落默认签名，不阻塞 CI。
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "未配置签名 Secrets，跳过（产物将使用 AGP 默认 debug 签名）"
+            exit 0
+          fi
+          mkdir -p android/app
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/robotops-release.jks
+          # storeFile 相对 android/app（gradle 的 file() 以 :app 项目目录为基准）
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=robotops-release.jks
+          EOF
+          echo "已还原签名密钥库（$(stat -c%s android/app/robotops-release.jks) 字节）"
+
       - name: Harden Android project
         # 注入 usesCleartextTraffic、INTERNET 权限与中文 App 名称（开发文档 §8.3）。
         run: python3 tool/prepare_android.py
@@ -82,7 +108,7 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
-      - name: Build release APK (unsigned distribution build)
+      - name: Build release APK
         run: flutter build apk --release
 
       - name: Upload APKs
@@ -92,17 +118,31 @@ jobs:
           path: build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
 
-      - name: Inspect APK metadata and signatures
-        # 诊断步骤：打印包名/版本/minSdk/targetSdk 与签名方案（v1/v2/v3）及证书指纹。
-        # 目的：定位真机安装失败（如安装器报 "PackageInfo is null"）时，区分两类原因：
-        #   (a) APK 签名缺失/无 v1 签名 → 安装器解析包信息失败；
-        #   (b) 不同构建轮次签名证书不一致 → 覆盖安装被系统拒绝。
+      - name: Verify APK signatures
+        # 断言而非仅打印：debug 与 release 必须由**同一张**证书签名。
+        # 这正是"固定签名"要保证的不变量 —— 一旦签名随构建轮次漂移，
+        # 新 APK 就无法覆盖安装旧 APK（真机报包信息/签名冲突错误）。
         run: |
-          ls -l build/app/outputs/flutter-apk/
+          set -u
           BT=$(ls -d /usr/local/lib/android/sdk/build-tools/* | sort -V | tail -1)
-          for APK in build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/app-release.apk; do
-            echo "=================== $APK ==================="
-            unzip -l "$APK" | grep -i "META-INF/" || echo "(no META-INF entries)"
-            "$BT/aapt" dump badging "$APK" | grep -E "^package|sdkVersion|targetSdkVersion|application-label|native-code" || true
-            "$BT/apksigner" verify --verbose --print-certs "$APK" || true
+          declare -A FP
+          for KIND in debug release; do
+            APK="build/app/outputs/flutter-apk/app-$KIND.apk"
+            echo "=== $APK ($(du -h "$APK" | cut -f1)) ==="
+            "$BT/aapt" dump badging "$APK" | grep -E "^package:|^sdkVersion|^targetSdkVersion" | sed 's/^/  /'
+            "$BT/apksigner" verify --print-certs "$APK" > "/tmp/$KIND.txt" 2>&1 \
+              || { echo "  ✗ 签名校验失败"; cat "/tmp/$KIND.txt"; exit 1; }
+            FN=$(basename "$APK")
+            FP[$KIND]=$(grep -m1 -oE 'certificate SHA-256 digest: [0-9a-fA-F]+' "/tmp/$KIND.txt" | awk '{print $NF}')
+            echo "  DN: $(grep -m1 -oE 'certificate DN: .*' "/tmp/$KIND.txt" | cut -d' ' -f3-)"
+            echo "  SHA-256: ${FP[$KIND]}  ($FN)"
           done
+          if [[ -z "${FP[debug]}" || -z "${FP[release]}" ]]; then
+            echo "✗ 未能解析签名指纹"; exit 1
+          fi
+          if [[ "${FP[debug]}" != "${FP[release]}" ]]; then
+            echo "✗ debug 与 release 签名证书不一致：${FP[debug]} vs ${FP[release]}"
+            echo "  → 覆盖安装会失败；请检查 Secrets 是否已正确写入。"
+            exit 1
+          fi
+          echo "✓ debug 与 release 使用同一张证书：${FP[debug]}"
