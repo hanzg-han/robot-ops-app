@@ -228,11 +228,12 @@ void main() {
       expect(res.points.length, 1);
       expect(res.hasErrors, isTrue);
       expect(res.errors.length, 3);
-      expect(res.errors[0], contains('第 3 行'));
+      // Dart 的多行字符串会去掉开头紧跟 ''' 的换行，故首行为第 1 行
+      expect(res.errors[0], contains('第 2 行'));
       expect(res.errors[0], contains('字段不足'));
-      expect(res.errors[1], contains('第 4 行'));
+      expect(res.errors[1], contains('第 3 行'));
       expect(res.errors[1], contains('x 不是数字'));
-      expect(res.errors[2], contains('第 5 行'));
+      expect(res.errors[2], contains('第 4 行'));
       expect(res.errors[2], contains('yaw 不是数字'));
     });
 
