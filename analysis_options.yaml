@@ -1,0 +1,14 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Flutter 版本迭代较快，第三方包/框架 API 的弃用告警不作为门禁（本项目 CI 用 `--no-fatal-warnings`）
+    deprecated_member_use: ignore
+    deprecated_member_use_from_same_package: ignore
+
+linter:
+  rules:
+    # 本项目为现场运维工具，允许在 async 之后按 mounted 判断使用 context
+    use_build_context_synchronously: false
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true

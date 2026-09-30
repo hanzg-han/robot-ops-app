@@ -1,0 +1,30 @@
+name: robot_ops_app
+description: 导诊机器人运维 App（手机端）——直连思岚 Athena2.0 PRO MAX 底盘本地 HTTP API 的现场运维工具。
+publish_to: "none"
+
+# 版本号与 About 页展示保持一致（AppConfig.appVersion）
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # 状态管理
+  flutter_riverpod: ^2.6.1
+  # 网络
+  dio: ^5.7.0
+  # 本地持久化（底盘地址、超时、开关项）
+  shared_preferences: ^2.3.3
+  # 工具
+  collection: ^1.18.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

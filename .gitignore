@@ -1,0 +1,25 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Android（平台工程由 CI 用 `flutter create --platforms=android` 生成，见 tool/prepare_android.py）
+/android/
+/android/.gradle/
+local.properties
+key.properties
+*.jks
+*.keystore
+
+# 其他
+.DS_Store
+Thumbs.db
+Temp/
