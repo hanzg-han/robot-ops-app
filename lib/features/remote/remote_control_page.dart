@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../app_state/controllers.dart';
 import '../../app_state/services.dart';
-import '../../core/config/app_config.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/num_fmt.dart';
 import '../../data/dto/models.dart';
