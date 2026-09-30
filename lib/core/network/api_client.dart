@@ -41,9 +41,6 @@ class ApiClient {
   /// 连续失败次数（判定「未连接」：连续 ≥2 次失败，PRD §3.4）
   int _consecutiveFailures = 0;
 
-  /// 连续超时次数（判定「响应慢」：连续 1 次超时，PRD §3.4）
-  int _consecutiveTimeouts = 0;
-
   final List<void Function(ConnState)> _connListeners = <void Function(ConnState)>[];
   void addConnListener(void Function(ConnState) l) => _connListeners.add(l);
   void removeConnListener(void Function(ConnState) l) => _connListeners.remove(l);
@@ -306,12 +303,6 @@ class ApiClient {
       error: error,
     ));
 
-    if (isTimeout) {
-      _consecutiveTimeouts++;
-    } else if (ok) {
-      _consecutiveTimeouts = 0;
-    }
-
     if (ok) {
       _lastSuccessAt = now;
       _consecutiveFailures = 0;
@@ -369,6 +360,7 @@ class ApiClient {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
+      case DioExceptionType.transformTimeout:
         return '请求超时（${(ms / 1000).toStringAsFixed(0)} 秒）。'
             '底盘可能正忙或网络较慢，可在设置中加大超时后重试。';
       case DioExceptionType.connectionError:

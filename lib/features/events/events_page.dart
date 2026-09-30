@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_state/controllers.dart';
 import '../../app_state/services.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/utils/num_fmt.dart';
+import '../../data/dto/models.dart';
 import '../../domain/models/event_catalog.dart';
 import '../../domain/services/event_dedupe.dart';
 import '../../shared/widgets/common.dart';

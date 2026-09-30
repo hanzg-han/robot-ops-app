@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../app_state/services.dart';
 import '../../core/config/app_config.dart';
-import '../../core/network/api_result.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/dto/models.dart';
 import '../../shared/widgets/common.dart';
 
 /// P00 启动 / 连接页（PRD §5.1；FR-CON-01~10）。

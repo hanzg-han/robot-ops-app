@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'app_state/controllers.dart';
 import 'app_state/robot_state.dart';
 import 'app_state/services.dart';
-import 'core/config/app_config.dart';
+import 'core/network/api_result.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/num_fmt.dart';
 import 'core/utils/time_fmt.dart';
@@ -42,12 +42,12 @@ class _RobotOpsAppState extends State<RobotOpsApp> {
     super.initState();
     s.state.addListener(_onState);
     events.start();
-    WidgetsBinding.instance.addObserver(_lifecycle);
+    // 生命周期（暂停轮询 / 停止遥控）由下方 _PollingLifecycle 统一处理
     // 启动自动连接（FR-CON-06）：有地址则自动检测一次
     WidgetsBinding.instance.addPostFrameCallback((_) => _autoConnect());
   }
 
-  final _lifecycle = _AppLifecycleObserver();
+
 
   /// 启动自动连接 + 连接预检（FR-CON-06/08）
   Future<void> _autoConnect() async {
@@ -67,7 +67,6 @@ class _RobotOpsAppState extends State<RobotOpsApp> {
   void dispose() {
     s.state.removeListener(_onState);
     events.stop();
-    WidgetsBinding.instance.removeObserver(_lifecycle);
     super.dispose();
   }
 
@@ -90,7 +89,7 @@ class _RobotOpsAppState extends State<RobotOpsApp> {
           remote: remote,
           tabIndex: tabIndex,
           onTab: (int i) => setState(() => tabIndex = i),
-          lifecycle: _lifecycle,
+
         ),
       ),
       builder: (BuildContext context, Widget? child) {
@@ -121,7 +120,6 @@ class _Shell extends StatelessWidget {
     required this.remote,
     required this.tabIndex,
     required this.onTab,
-    required this.lifecycle,
   });
 
   final AppServices services;
@@ -132,8 +130,6 @@ class _Shell extends StatelessWidget {
   final RemoteControlController remote;
   final int tabIndex;
   final ValueChanged<int> onTab;
-  final _AppLifecycleObserver lifecycle;
-
   @override
   Widget build(BuildContext context) {
     final state = services.state;
@@ -490,7 +486,7 @@ class _ActiveActionBar extends StatelessWidget {
     required Color textColor,
     required String label,
     required String detail,
-    required Future<void> Function()? onAbort,
+    required Future<AbortOutcome> Function()? onAbort,
   }) {
     return Material(
       color: background,
@@ -530,7 +526,7 @@ class _ActiveActionBar extends StatelessWidget {
                     final outcome = await onAbort();
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(outcome is AbortOutcome ? outcome.message : '已下发终止')),
+                      SnackBar(content: Text(outcome.message)),
                     );
                   },
                   style: FilledButton.styleFrom(
@@ -619,8 +615,4 @@ class _PollingLifecycleState extends State<_PollingLifecycle>
 
   @override
   Widget build(BuildContext context) => widget.child;
-}
-
-class _AppLifecycleObserver {
-  const _AppLifecycleObserver();
 }

@@ -82,9 +82,6 @@ class RobotState extends ChangeNotifier {
   bool _visible = true;
   bool _disposed = false;
 
-  /// 上一轮动作是否为「运行中」（用于捕获结束边沿，触发到达反馈）
-  bool _lastActionRunning = false;
-
   /// 行为结束回调（FR-NAV-09 到达反馈、巡逻状态机推进）
   final List<void Function(ActionState? last, ActionState? current)> _actionWatchers =
       <void Function(ActionState?, ActionState?)>[];
@@ -180,6 +177,12 @@ class RobotState extends ChangeNotifier {
 
   /// 是否禁止进入遥控（FR-RC-15）
   bool get blocksRemoteControl => health?.blocksRemoteControl ?? false;
+
+  /// 连接状态监听（透传 ApiClient，便于 UI 响应断连）
+  void addConnListener(void Function(ConnState) l) => client.addConnListener(l);
+
+  void removeConnListener(void Function(ConnState) l) =>
+      client.removeConnListener(l);
 
   // ------------------------------------------------------------- 页面可见
   /// 页面不可见 → 暂停轮询（FR-DASH-10 / 工程验收「切后台后无周期请求」）
@@ -289,7 +292,6 @@ class RobotState extends ChangeNotifier {
       if (nowRunning) {
         _dispatchedAt = null;
       }
-      _lastActionRunning = nowRunning;
 
       notifyListeners();
     } finally {

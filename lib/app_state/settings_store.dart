@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
-import '../core/network/request_log.dart';
 import '../domain/services/patrol_engine.dart';
 
 /// 本地持久化（PRD §9.3）。
@@ -136,10 +135,14 @@ class SettingsStore extends ChangeNotifier {
         if (decoded is Map) {
           final points = decoded['points'];
           if (points is List) {
-            patrolDraft = <PatrolPoint>[
-              for (final p in points)
-                if (p is Map) _tryPoint(Map<String, dynamic>.from(p)),
-            ].whereType<PatrolPoint>().toList();
+            final parsed = <PatrolPoint>[];
+            for (final p in points) {
+              if (p is Map) {
+                final pt = _tryPoint(Map<String, dynamic>.from(p));
+                if (pt != null) parsed.add(pt);
+              }
+            }
+            patrolDraft = parsed;
           }
           final params = decoded['params'];
           if (params is Map) {
@@ -329,10 +332,14 @@ class SettingsStore extends ChangeNotifier {
     if (raw == null) return null;
     final decoded = jsonDecode(raw);
     if (decoded is! List) return null;
-    return <PatrolPoint>[
-      for (final p in decoded)
-        if (p is Map) _tryPoint(Map<String, dynamic>.from(p)),
-    ].whereType<PatrolPoint>().toList();
+    final parsed = <PatrolPoint>[];
+    for (final p in decoded) {
+      if (p is Map) {
+        final pt = _tryPoint(Map<String, dynamic>.from(p));
+        if (pt != null) parsed.add(pt);
+      }
+    }
+    return parsed;
   }
 
   /// 诊断信息一键复制（FR-SET-05）

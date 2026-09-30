@@ -7,7 +7,6 @@ import '../core/config/app_config.dart';
 import '../core/network/api_result.dart';
 import '../core/network/request_log.dart';
 import '../data/dto/models.dart';
-import '../data/repositories/repositories.dart';
 import '../domain/models/event_catalog.dart';
 import '../domain/services/event_dedupe.dart';
 import '../domain/services/patrol_engine.dart';
@@ -212,7 +211,7 @@ class NavigationController extends ChangeNotifier {
 
   final AppServices services;
 
-  final RequestLogBuffer get log => services.log;
+  RequestLogBuffer get log => services.log;
 
   List<Poi> get pois => services.state.pois;
 
@@ -493,9 +492,6 @@ class PatrolController extends ChangeNotifier {
   /// 停留倒计时剩余秒
   int dwellRemainingSec = 0;
 
-  /// 单点已等待时长（用于超时判定）
-  DateTime? _pointStartedAt;
-
   Timer? _dwellTimer;
   Timer? _pointTimeoutTimer;
   bool _advancing = false;
@@ -720,7 +716,6 @@ class PatrolController extends ChangeNotifier {
       services.state.markDispatched();
 
       _waitingAction = true;
-      _pointStartedAt = DateTime.now();
 
       // 单点超时（FR-PAT-08：默认 10 分钟，超时按「未到达」处理并终止）
       _pointTimeoutTimer?.cancel();
