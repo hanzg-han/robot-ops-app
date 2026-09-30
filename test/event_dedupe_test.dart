@@ -134,9 +134,12 @@ void main() {
         <String, dynamic>{'type': 'ON_DOCK', 'timestamp': 1},
         <String, dynamic>{'type': 'PATH_OCCUPIED', 'timestamp': 2},
       ]);
-      dedupe.events.first.read = true;
+      // events 按时间倒序：first = PATH_OCCUPIED(2, 警告)，last = ON_DOCK(1, 信息)
+      // 把「信息」那条标记为已读，清空后应保留未读的「警告」那条
+      dedupe.events.last.read = true;
       dedupe.clearRead();
       expect(dedupe.length, 1);
+      expect(dedupe.events.single.type, 'PATH_OCCUPIED');
       expect(dedupe.events.single.level, EventLevel.warning);
     });
   });
