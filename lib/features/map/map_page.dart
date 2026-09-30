@@ -694,7 +694,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Widget _legend() {
-    final items = <MapEntry<Color, String>>[
+    const items = <MapEntry<Color, String>>[
       MapEntry(AppColors.gridPassable, '可通行'),
       MapEntry(AppColors.gridUnexplored, '未探索'),
       MapEntry(AppColors.gridObstacle, '障碍'),
