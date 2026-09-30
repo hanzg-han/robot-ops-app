@@ -1,4 +1,4 @@
-import 'event_catalog.dart';
+import '../models/event_catalog.dart';
 
 /// 一条事件（本地模型）。
 ///

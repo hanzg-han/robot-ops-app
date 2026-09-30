@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../app_state/services.dart';
 import '../../core/config/app_config.dart';
-import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/common.dart';
 
 /// P11 设置·关于（PRD §5.9）。

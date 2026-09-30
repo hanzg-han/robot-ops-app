@@ -3,10 +3,9 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/network/api_result.dart';
 import '../../core/utils/num_fmt.dart';
-import '../../domain/models/event_catalog.dart';
-import '../../domain/services/action_name_resolver.dart';
 import '../dto/models.dart';
 import '../map/grid_codec.dart';
+import '../../domain/services/action_name_resolver.dart';
 
 /// 系统 / 电源 / 健康 / 参数（开发文档 §10.1）
 class SystemRepository {

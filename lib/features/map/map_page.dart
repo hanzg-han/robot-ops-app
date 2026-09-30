@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../../app_state/controllers.dart';
-import '../../app_state/robot_state.dart';
 import '../../app_state/services.dart';
 import '../../core/config/app_config.dart';
 import '../../core/theme/app_theme.dart';
@@ -13,6 +12,7 @@ import '../../data/dto/models.dart';
 import '../../data/map/grid_codec.dart';
 import '../../shared/widgets/common.dart';
 import '../../shared/widgets/confirm_danger.dart';
+import '../remote/remote_control_page.dart';
 import 'map_canvas.dart';
 
 /// P02 地图 + P03 选点面板（PRD §5.3 / §5.4；FR-MAP-01~15、FR-NAV-04~07）。
@@ -298,7 +298,6 @@ class _MapPageState extends State<MapPage> {
       isScrollControlled: true,
       builder: (BuildContext ctx) => StatefulBuilder(
         builder: (BuildContext ctx, StateSetter setSheet) {
-          final s = widget.services;
           final block = widget.gate.blockReason(needsDock: false);
           return Padding(
             padding: EdgeInsets.only(
