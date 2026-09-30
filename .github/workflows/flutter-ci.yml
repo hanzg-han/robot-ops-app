@@ -91,3 +91,18 @@ jobs:
           name: robot-ops-apk
           path: build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
+
+      - name: Inspect APK metadata and signatures
+        # 诊断步骤：打印包名/版本/minSdk/targetSdk 与签名方案（v1/v2/v3）及证书指纹。
+        # 目的：定位真机安装失败（如安装器报 "PackageInfo is null"）时，区分两类原因：
+        #   (a) APK 签名缺失/无 v1 签名 → 安装器解析包信息失败；
+        #   (b) 不同构建轮次签名证书不一致 → 覆盖安装被系统拒绝。
+        run: |
+          ls -l build/app/outputs/flutter-apk/
+          BT=$(ls -d /usr/local/lib/android/sdk/build-tools/* | sort -V | tail -1)
+          for APK in build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/app-release.apk; do
+            echo "=================== $APK ==================="
+            unzip -l "$APK" | grep -i "META-INF/" || echo "(no META-INF entries)"
+            "$BT/aapt" dump badging "$APK" | grep -E "^package|sdkVersion|targetSdkVersion|application-label|native-code" || true
+            "$BT/apksigner" verify --verbose --print-certs "$APK" || true
+          done
