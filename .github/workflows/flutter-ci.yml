@@ -62,7 +62,9 @@ jobs:
 
       - name: Generate Android platform project
         # android/ 目录不入库，由 CI 现场生成（见 .gitignore 与 README）。
-        run: flutter create --platforms=android --org com.wizrole .
+        # --project-name 必须显式指定：否则会用仓库目录名（robot-ops-app，含连字符）作为
+        # Dart 包名，而 Dart 包名只允许 [a-z0-9_]。
+        run: flutter create --platforms=android --org com.wizrole --project-name robot_ops_app .
 
       - name: Harden Android project
         # 注入 usesCleartextTraffic、INTERNET 权限与中文 App 名称（开发文档 §8.3）。
