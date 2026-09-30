@@ -6,13 +6,11 @@ import 'app_state/services.dart';
 import 'core/network/api_result.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/num_fmt.dart';
-import 'core/utils/time_fmt.dart';
 import 'domain/models/event_catalog.dart';
 import 'features/connect/connect_page.dart';
 import 'features/dashboard/dashboard_page.dart';
 import 'features/events/events_page.dart';
 import 'features/map/map_page.dart';
-import 'features/remote/remote_control_page.dart';
 import 'features/settings/settings_page.dart';
 import 'features/tasks/tasks_page.dart';
 import 'shared/widgets/common.dart';
@@ -435,7 +433,10 @@ class _ActiveActionBar extends StatelessWidget {
         textColor: Colors.white,
         label: '遥控中',
         detail: '已 ${remote.sessionDurationLabel} · 本次行进 ${remote.travelledMeters.toStringAsFixed(2)} m',
-        onAbort: () => remote.stopAll(reason: '行为条终止'),
+        onAbort: () async {
+          await remote.stopAll(reason: '行为条终止');
+          return const AbortOutcome(kind: AbortKind.done, message: '遥控已停止。');
+        },
       );
     }
 

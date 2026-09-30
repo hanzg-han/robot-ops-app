@@ -220,10 +220,6 @@ class RobotState extends ChangeNotifier {
   }
 
 
-  /// 连接状态监听（透传 ApiClient，便于 UI 响应断连）
-  void addConnListener(void Function(ConnState) l) => client.addConnListener(l);
-
-  void removeConnListener(void Function(ConnState) l) => client.removeConnListener(l);
   void _stopPolling() {
     _pollTimer?.cancel();
     _pollTimer = null;

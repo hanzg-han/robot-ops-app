@@ -4,7 +4,6 @@ import '../../app_state/controllers.dart';
 import '../../app_state/services.dart';
 import '../../core/config/app_config.dart';
 import '../../core/theme/app_theme.dart';
-import '../../data/dto/models.dart';
 import '../../shared/widgets/common.dart';
 import 'about_page.dart';
 import 'dock_page.dart';
