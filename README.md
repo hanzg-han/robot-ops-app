@@ -30,7 +30,7 @@
 flutter pub get
 
 # Android 平台工程不入库，需先生成（见 .gitignore）
-flutter create --platforms=android --org com.wizrole .
+flutter create --platforms=android --org com.wizrole --project-name robot_ops_app .
 
 # 注入明文流量例外 / INTERNET 权限 / 中文 App 名（开发文档 §8.3）
 python tool/prepare_android.py
@@ -87,9 +87,10 @@ git push -u origin main
 3. `flutter test`（栅格解析 / 巡逻状态机 / 动作名解析 / 事件去重 / 安全红线）
 4. `flutter create --platforms=android --org com.wizrole --project-name robot_ops_app .`（生成平台工程）
    - `--project-name` 必须显式指定：仓库目录名 `robot-ops-app` 含连字符，不是合法 Dart 包名
-5. `python3 tool/prepare_android.py`（明文流量、权限、App 名）
+5. `python3 tool/prepare_android.py`（明文流量、权限、App 名、包名、签名配置）
 6. `flutter build apk --debug` 与 `flutter build apk --release`
 7. 上传 APK 与 Android 平台工程产物（Artifacts）
+8. 校验 debug / release 签名证书一致（不一致即失败）
 
 > **安全说明（FR-SAFE-05）**：CI **只做** 静态分析、纯逻辑单测与编译。
 > 所有涉及机器人移动的验证必须在真机上由**人工现场触发并全程目视**，
@@ -172,6 +173,42 @@ FlutterDemo/
 | 14 | 终止返回 200 但响应体为空 | 「是否真的终止了什么」依据终止前后 `:current` 是否 404 判定，不看状态码 |
 | 15 | `parameter` 可写范围 | 仅 3 项白名单（最大线速度 / 最大角速度 / 充电桩注册策略），受控控件 + 枚举，不做自由文本 |
 | 16 | 遥控不会避障 | 顶部红色风险条常驻不可关闭；单次 `duration ≤500ms`、下发间隔 `≤300ms`；六路立即停止 |
+
+
+### 6.1 Android 签名与「安装失败」排查（重要）
+
+**为什么会失败**：AGP 默认的 debug 签名用 `~/.android/debug.keystore`。CI 每次运行
+都是全新 HOME，AGP 会现场新建该文件，于是**每一轮 CI 产出的 APK 签名证书都不同**。
+当设备上已装过旧一轮的 APK 时，新一轮 APK 无法覆盖安装，安装器会直接报包信息
+解析失败（例如 `PackageInfo is null`）或签名冲突。
+
+**处理办法**：仓库固定一把发布密钥，debug 与 release 都用它签名。
+
+| 项 | 值 |
+| --- | --- |
+| 密钥库 | `tool/android-signing/robotops-release.jks`（**已被 .gitignore 忽略，绝不入库**） |
+| 别名 | `robotops` |
+| 有效期 | 30 年（10950 天） |
+| 证书 SHA-256 | `B8:98:BA:30:45:2F:8A:D6:AD:2D:87:24:2A:BB:0B:26:C8:CD:26:D6:77:76:01:04:50:A3:58:A0:57:23:A0:C5` |
+| 凭据 | `tool/android-signing/credentials.txt`（同目录，已忽略） |
+
+CI 从以下 4 个 Repository Secret 还原密钥（`Restore release signing keystore` 步骤）：
+
+| Secret | 内容 |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | 密钥库文件的 base64 |
+| `ANDROID_KEYSTORE_PASSWORD` | 密钥库口令 |
+| `ANDROID_KEY_ALIAS` | `robotops` |
+| `ANDROID_KEY_PASSWORD` | 私钥口令 |
+
+> ⚠️ **这把密钥丢了就无法再对已装设备做覆盖升级**（只能卸载重装）。请把
+> `credentials.txt` 与 `.jks` 另存到项目密码库。
+
+**真机安装建议**：同一台手机先卸载旧包再装新包（`adb uninstall com.wizrole.robot_ops_app`），
+避免被上一轮不同签名的残留挡住。CI 的 `Verify APK signatures` 步骤会断言
+debug 与 release 证书一致；若失败，先检查 4 个 Secret 是否齐全。
+
+**首次改用固定签名后**：设备上此前用临时 debug 密钥装过的旧版本必须先卸载。
 
 ---
 

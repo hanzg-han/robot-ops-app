@@ -18,7 +18,8 @@ local.properties
 key.properties
 *.jks
 *.keystore
-
+# 发布签名密钥库与凭据（仅由 CI 通过 Secrets 还原；绝不入库）
+/tool/android-signing/
 # 其他
 .DS_Store
 Thumbs.db
